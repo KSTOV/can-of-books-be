@@ -51,6 +51,17 @@ Start time: <1:45pm>
 Finish time: <2:45pm>
 Actual time needed to complete: <1 hour>
 
+#### Name of feature: <Create>
+Estimate of time needed to complete: <1 hour>
+Start time: <1:30pm>
+Finish time: <2:00pm>
+Actual time needed to complete: <30 mins>
+
+#### Name of feature: <Delete>
+Estimate of time needed to complete: <1 hour>
+Start time: <2:00 pm>
+Finish time: <2:30pm>
+Actual time needed to complete: <30 mins>
 ## Change Log
 <!-- Use this area to document the iterative changes made to your application as each feature is successfully implemented. Use time stamps. Here's an example:
 
