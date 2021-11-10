@@ -13,9 +13,10 @@ app.use(express.json());
 const PORT = process.env.PORT || 3001;
 
 app.get('/', (req,res) => res.send('hello'));
-app.get('/books', getBooks)
-app.post('/books', postBooks)
-app.delete('/books/:id', deleteBooks)
+app.get('/books', getBooks);
+app.post('/books', postBooks);
+app.delete('/books/:id', deleteBooks);
+app.put('/books/:id', putBooks);
 
 mongoose.connect(process.env.DB_URL, {useNewUrlParser: true, useUnifiedTopology: true});
 
@@ -60,7 +61,6 @@ async function postBooks(req, res) {
 async function deleteBooks(req, res) {
   const id = req.params.id;
   const email = req.query.email;
-
   try{
     const book = await Book.findOne({_id: id, email: email });
     if(!book) {
@@ -71,6 +71,20 @@ async function deleteBooks(req, res) {
     }
   } catch(e) {
     console.log(e)
+    res.status(500).send('SERVER ERROR');
+  }
+}
+
+async function putBooks(req, res) {
+  const id = req.params.id;
+  const updatedData = {...req.body, email: req.query.email }
+  console.log(updatedData);
+  try{
+    const updatedBook = await Book.findByIdAndUpdate(id, updatedData, {new: true, overwrite: true});
+    console.log(updatedBook);
+    res.status(200).send(updatedBook)
+  } catch (e) {
+    console.log(e);
     res.status(500).send('SERVER ERROR');
   }
 }
