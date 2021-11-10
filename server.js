@@ -38,7 +38,7 @@ async function getBooks(req, res) {
     } else {
       res.status(404).send('No Books Found');
     }
-  } catch (event) {
+  } catch(event) {
     console.error(event);
     res.status(500).send('server error');
   }
@@ -48,7 +48,7 @@ async function postBooks(req, res) {
   try {
     let newBook = await Book.create(req.body);
     res.status(201).send(newBook);
-  } catch (event) {
+  } catch(event) {
     res.status(500).send('Books was not added');
   }
 }
@@ -64,7 +64,7 @@ async function deleteBooks(req, res) {
     } else {
       res.status(404).send("BOOK NOT FOUND");
     }
-  } catch (event) {
+  } catch(event) {
     res.status(500).send('SERVER ERROR');
   }
 }
