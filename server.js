@@ -1,3 +1,4 @@
+'use strict';
 
 require('dotenv').config();
 const express = require('express');
@@ -11,6 +12,11 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
 
+app.get('/', (req,res) => res.send('hello'));
+app.get('/books', getBooks)
+app.post('/books', postBooks)
+app.delete('/books/:id', deleteBooks)
+
 mongoose.connect(process.env.DB_URL, {useNewUrlParser: true, useUnifiedTopology: true});
 
 const db = mongoose.connection;
@@ -19,52 +25,52 @@ db.once('open', function() {
   console.log('Mongoose is connected')
 });
 
-
-app.get('/books', getBooks)
-app.post('/books', postBooks)
-app.delete('/books/:id', deleteBooks)
-
 async function getBooks(req, res) {
-  let queryObj = {};
-  console.log('inside get')
-  if (req.query.email) {
-    queryObj = {email: req.query.email}
-  }
-
+  
+  const email = req.query.email;
   try {
-    let booksFromDB = await Book.find(queryObj);
+    let booksFromDB = await Book.find({email});
     if (booksFromDB) {
       res.status(200).send(booksFromDB);
     } else {
       res.status(404).send('No Books Found');
     }
-  } catch(event) {
-    console.error(event);
+  } catch(e) {
+    console.log(e);
     res.status(500).send('server error');
   }
 }
 
 async function postBooks(req, res) {
+  const newBook = {...req.body, email: req.query.email};
+
   try {
-    let newBook = await Book.create(req.body);
-    res.status(201).send(newBook);
-  } catch(event) {
-    res.status(500).send('Books was not added');
+    let createBook = await Book.create(newBook);
+    if(createBook) {
+      res.status(201).send(createBook);
+    } else {
+      res.status(400).send('BOOK NOT ADDED')
+    }
+  } catch(e) {
+    console.log(e);
+    res.status(500).send('SERVER ERROR');
   }
 }
 
 async function deleteBooks(req, res) {
   const id = req.params.id;
-  console.log('inside delete')
+  const email = req.query.email;
+
   try{
-    const deletedBook = await Book.findByIdAndDelete(id);
-    console.log(deletedBook);
-    if(deletedBook) {
-      res.status(204).send('BOOK DELETED');
+    const book = await Book.findOne({_id: id, email: email });
+    if(!book) {
+      res.status(400).send('BOOK NOT DELETED');
     } else {
-      res.status(404).send("BOOK NOT FOUND");
+      await Book.findByIdAndDelete(id);
+      res.status(204).send('BOOK DELETED');
     }
-  } catch(event) {
+  } catch(e) {
+    console.log(e)
     res.status(500).send('SERVER ERROR');
   }
 }
