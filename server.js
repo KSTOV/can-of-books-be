@@ -5,6 +5,8 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const Book = require('./Models/book.js');
+const verifyUser = require('./auth.js');
+const { response } = require('express');
 
 const app = express();
 app.use(cors());
@@ -17,6 +19,7 @@ app.get('/books', getBooks);
 app.post('/books', postBooks);
 app.delete('/books/:id', deleteBooks);
 app.put('/books/:id', putBooks);
+app.get('/user', getUser);
 
 mongoose.connect(process.env.DB_URL, {useNewUrlParser: true, useUnifiedTopology: true});
 
@@ -26,20 +29,21 @@ db.once('open', function() {
   console.log('Mongoose is connected')
 });
 
-async function getBooks(req, res) {
-  
-  const email = req.query.email;
-  try {
-    let booksFromDB = await Book.find({email});
-    if (booksFromDB) {
-      res.status(200).send(booksFromDB);
+function getBooks(req, res) {
+
+  verifyUser(req, async (err, user) => {
+    if (err) {
+      res.send('invalid token');
     } else {
-      res.status(404).send('No Books Found');
+      try {
+        let booksFromDB = await Book.find({email: user.email});
+        res.send(booksFromDB);
+      } catch(e) {
+        console.log(e);
+        res.status(400).send('BOOKS NOT FOUND');
+      }
     }
-  } catch(e) {
-    console.log(e);
-    res.status(500).send('server error');
-  }
+  })
 }
 
 async function postBooks(req, res) {
@@ -58,21 +62,27 @@ async function postBooks(req, res) {
   }
 }
 
-async function deleteBooks(req, res) {
-  const id = req.params.id;
-  const email = req.query.email;
-  try{
-    const book = await Book.findOne({_id: id, email: email });
-    if(!book) {
-      res.status(400).send('BOOK NOT DELETED');
+function deleteBooks(req, res) {
+  verifyUser(req, async (err, user) => {
+    if (err) {
+      res.send('invalid token');
     } else {
-      await Book.findByIdAndDelete(id);
-      res.status(204).send('BOOK DELETED');
+      try{
+        const id = req.params.id;
+        const email = user.email;
+        const book = await Book.findOne({_id: id, email: email });
+        if(!book) {
+          res.status(400).send('BOOK NOT DELETED');
+        } else {
+          await Book.findByIdAndDelete(id);
+          res.status(204).send('BOOK DELETED');
+        }
+      } catch(e) {
+        console.log(e)
+        res.status(500).send('SERVER ERROR');
+      }
     }
-  } catch(e) {
-    console.log(e)
-    res.status(500).send('SERVER ERROR');
-  }
+  })
 }
 
 async function putBooks(req, res) {
@@ -87,6 +97,17 @@ async function putBooks(req, res) {
     console.log(e);
     res.status(500).send('SERVER ERROR');
   }
+}
+
+function getUser (req, res) {
+
+  verifyUser(req, (err, user) => {
+    if (err) {
+      res.send('invalid token');
+    } else {
+      response.send(user);
+    }
+  })
 }
 
 app.listen(PORT, () => console.log(`listening on ${PORT}`));
