@@ -6,7 +6,6 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const Book = require('./Models/book.js');
 const verifyUser = require('./auth.js');
-const { response } = require('express');
 
 const app = express();
 app.use(cors());
@@ -31,7 +30,7 @@ db.once('open', function() {
 
 function getBooks(req, res) {
 
-  verifyUser(req, async (err, user) => {
+  verifyUser(req, async(err, user) => {
     if (err) {
       res.send('invalid token');
     } else {
@@ -46,24 +45,30 @@ function getBooks(req, res) {
   })
 }
 
-async function postBooks(req, res) {
-  const newBook = {...req.body, email: req.query.email};
+function postBooks(req, res) {
 
-  try {
-    let createBook = await Book.create(newBook);
-    if(createBook) {
-      res.status(201).send(createBook);
+  verifyUser(req, async(err, user) => {
+    if(err) {
+      res.send('invalid token');
     } else {
-      res.status(400).send('BOOK NOT ADDED')
+      try {
+        const newBook = {...req.body, email: user.email};
+        let createBook = await Book.create(newBook);
+        if(createBook) {
+          res.status(201).send(createBook);
+        } else {
+          res.status(400).send('BOOK NOT ADDED')
+        }
+      } catch(e) {
+        console.log(e);
+        res.status(500).send('SERVER ERROR');
+      }
     }
-  } catch(e) {
-    console.log(e);
-    res.status(500).send('SERVER ERROR');
-  }
+  })
 }
 
 function deleteBooks(req, res) {
-  verifyUser(req, async (err, user) => {
+  verifyUser(req, async(err, user) => {
     if (err) {
       res.send('invalid token');
     } else {
@@ -85,18 +90,24 @@ function deleteBooks(req, res) {
   })
 }
 
-async function putBooks(req, res) {
-  const id = req.params.id;
-  const updatedData = {...req.body, email: req.query.email }
-  console.log(updatedData);
-  try{
-    const updatedBook = await Book.findByIdAndUpdate(id, updatedData, {new: true, overwrite: true});
-    console.log(updatedBook);
-    res.status(200).send(updatedBook)
-  } catch (e) {
-    console.log(e);
-    res.status(500).send('SERVER ERROR');
-  }
+function putBooks(req, res) {
+  verifyUser(req, async(err, user) => {
+    if (err) {
+      res.send('invalid token');
+    } else {
+      try{
+        const id = req.params.id;
+        const updatedData = {...req.body, email: user.email }
+        console.log(updatedData);
+        const updatedBook = await Book.findByIdAndUpdate(id, updatedData, {new: true, overwrite: true});
+        console.log(updatedBook);
+        res.status(200).send(updatedBook)
+      } catch (e) {
+        console.log(e);
+        res.status(500).send('SERVER ERROR');
+      }
+    }
+  })
 }
 
 function getUser (req, res) {
@@ -105,7 +116,8 @@ function getUser (req, res) {
     if (err) {
       res.send('invalid token');
     } else {
-      response.send(user);
+      console.log(user);
+      res.send(user);
     }
   })
 }
